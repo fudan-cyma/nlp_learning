@@ -1,4 +1,4 @@
-
+# add embedding layer in Keras: Embedding(MAX_WORDS, DIMENSION, weights = [embedding_matrix], input_length = MAX_LEN, trainable = False)
 
 import os 
 import numpy as np
@@ -13,17 +13,15 @@ DIMENSION = 300
 MAX_WORDS = 10000
 TEST_SIZE = 0.1
 
-glove_dir = '/home/chloe/Downloads/glove.840B.300d.txt'
+glove_dir = '/home/chloe/Downloads/glove.42B.300d.txt'
 
-def load_text():
-    imdb_dir = '/home/chloe/Downloads/imdb'
-    train_dir = os.path.join(imdb_dir, 'train')
+def load_text(dir):
 
     labels = []
     texts = []
 
     for label_type in ['neg', 'pos']:
-        dir_name = os.path.join(train_dir, label_type)
+        dir_name = os.path.join(dir, label_type)
         for fname in os.listdir(dir_name):
             if fname[-4:] == '.txt':
                 f = open(os.path.join(dir_name, fname))
@@ -40,14 +38,15 @@ def tokenize(texts):
     tokenizer = Tokenizer(num_words = MAX_WORDS)
     tokenizer.fit_on_texts(texts)
     sequences = tokenizer.texts_to_sequences(texts)
-    data = pad_sequences(sequences)
-    return data
+    word_index = tokenizer.word_index
+    data = pad_sequences(sequences, maxlen = MAX_LEN)
+    return data, word_index
 
 def split(texts_tokenized, labels):
     X_train, X_test, Y_train, Y_test = train_test_split(texts_tokenized, labels, test_size = TEST_SIZE)
     return X_train, X_test, Y_train, Y_test
 
-def embedding():
+def embedding(word_index):
     embedding_index = {}
     file = open(glove_dir)
     for line in file:
@@ -59,7 +58,7 @@ def embedding():
     file.close()
     
     embedding_matrix = np.zeros((MAX_WORDS, DIMENSION))
-    for word, i in embedding_index:
+    for word, i in word_index.items():
         if i < MAX_WORDS:
             embedding_vector = embedding_index.get(word)
             if embedding_vector is not None:
@@ -70,8 +69,4 @@ def embedding():
     
 
 
-labels, texts = load_text() 
-texts_tokenized = tokenize(texts)
-X_train, X_test, Y_train, Y_test = split(texts_tokenized, labels)
-embedding_matrix = embedding()
 
